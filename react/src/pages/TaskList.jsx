@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import '../styles/TaskList.css'
 
 const STORAGE_KEY = 'placetrack_records'
+const API = import.meta.env.VITE_API_URL   // ✅ added
 
 export default function TaskList() {
   const [records, setRecords] = useState([])
@@ -20,11 +21,17 @@ export default function TaskList() {
     }
 
     try {
-      const res = await fetch('http://localhost:3500/api/tasks', {
+      const res = await fetch(`${API}/api/tasks`, {   // ✅ changed
         headers: { 'x-api-key': 'placetrack2025' }
       })
 
       const data = await res.json()
+
+      if (!res.ok) {   // ✅ added
+        console.error(data.error)
+        return
+      }
+
       setRecords(data)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 
@@ -40,11 +47,16 @@ export default function TaskList() {
 
   async function handleToggle(id) {
     try {
-      const res = await fetch(`http://localhost:3500/api/update/${id}`, {
+      const res = await fetch(`${API}/api/update/${id}`, {   // ✅ changed
         headers: { 'x-api-key': 'placetrack2025' }
       })
 
       const updatedRecord = await res.json()
+
+      if (!res.ok) {
+        console.error(updatedRecord.error)
+        return
+      }
 
       const updatedList = records.map(r =>
         r._id === updatedRecord._id ? updatedRecord : r
@@ -59,10 +71,16 @@ export default function TaskList() {
 
   async function handleDelete(id) {
     try {
-      await fetch(`http://localhost:3500/api/delete/${id}`, {
+      const res = await fetch(`${API}/api/delete/${id}`, {   // ✅ changed
         method: 'DELETE',
         headers: { 'x-api-key': 'placetrack2025' }
       })
+
+      if (!res.ok) {
+        const data = await res.json()
+        console.error(data.error)
+        return
+      }
 
       const updatedList = records.filter(r => r._id !== id)
       saveToStorage(updatedList)
@@ -109,15 +127,22 @@ export default function TaskList() {
         <div className="filter-group">
           <span className="filter-label">Status:</span>
           {['All', 'Pending', 'Approved', 'Rejected'].map(s => (
-            <button key={s} className={`filter-btn ${filterStatus === s ? 'active' : ''}`}
-              onClick={() => setFilterStatus(s)}>{s}</button>
+            <button key={s}
+              className={`filter-btn ${filterStatus === s ? 'active' : ''}`}
+              onClick={() => setFilterStatus(s)}>
+              {s}
+            </button>
           ))}
         </div>
+
         <div className="filter-group">
           <span className="filter-label">Type:</span>
           {['All', 'Internship', 'Placement'].map(t => (
-            <button key={t} className={`filter-btn ${filterType === t ? 'active' : ''}`}
-              onClick={() => setFilterType(t)}>{t}</button>
+            <button key={t}
+              className={`filter-btn ${filterType === t ? 'active' : ''}`}
+              onClick={() => setFilterType(t)}>
+              {t}
+            </button>
           ))}
         </div>
       </div>
@@ -140,7 +165,9 @@ export default function TaskList() {
                   <p className="student-role">{rec.role} @ {rec.company}</p>
                 </div>
               </div>
-              <span className={`badge badge-${rec.status.toLowerCase()}`}>{rec.status}</span>
+              <span className={`badge badge-${rec.status.toLowerCase()}`}>
+                {rec.status}
+              </span>
             </div>
 
             <div className="card-meta">
