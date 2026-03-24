@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import '../styles/TaskStatistics.css'
 
+const API = import.meta.env.VITE_API_URL   // ✅ added
+
 export default function TaskStatistics() {
   const [records, setRecords] = useState([])
 
   useEffect(() => {
     async function fetchRecords() {
       try {
-        const res = await fetch('http://localhost:3500/api/tasks', {
+        const res = await fetch(`${API}/api/tasks`, {   // ✅ changed
           headers: { 'x-api-key': 'placetrack2025' }
         })
 
