@@ -3,28 +3,26 @@ import '../styles/TaskList.css';
 
 const API = import.meta.env.VITE_API_URL;
 
-export default function TaskList() {
+export default function TaskList({ reloadFlag }) {
   const [records, setRecords] = useState([]);
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [filterType, setFilterType] = useState('All');
 
   useEffect(() => {
     loadRecords();
-  }, []);
+  }, [reloadFlag]);
 
   async function loadRecords() {
     try {
       const res = await fetch(`${API}/api/tasks`, {
         method: 'GET',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'x-api-key': 'placetrack2025' 
+          'x-api-key': 'placetrack2025'
         }
       });
       const data = await res.json();
       if (res.ok) setRecords(data);
     } catch (err) {
-      console.error('Could not fetch records:', err);
+      console.error(err);
     }
   }
 
@@ -58,58 +56,23 @@ export default function TaskList() {
     }
   }
 
-  const filtered = records.filter(r => 
-    (filterStatus==='All'||r.status===filterStatus) &&
-    (filterType==='All'||r.type===filterType)
-  );
-
-  function formatCtc(ctc) {
-    return ctc>=100000 ? '₹'+(ctc/100000).toFixed(1)+' LPA' : '₹'+ctc.toLocaleString('en-IN')+'/mo';
-  }
+  const filtered = records;
 
   return (
     <div className="page-list">
-      <div className="page-header">
-        <h1>👩‍🏫 Faculty Review Panel</h1>
-        <p className="subtitle">Review, approve, or reject student submissions.</p>
-      </div>
-
-      <div className="filter-bar">
-        <div className="filter-group">
-          <span>Status:</span>
-          {['All','Pending','Approved','Rejected'].map(s=>(
-            <button key={s} className={filterStatus===s?'active':''} onClick={()=>setFilterStatus(s)}>{s}</button>
-          ))}
-        </div>
-        <div className="filter-group">
-          <span>Type:</span>
-          {['All','Internship','Placement'].map(t=>(
-            <button key={t} className={filterType===t?'active':''} onClick={()=>setFilterType(t)}>{t}</button>
-          ))}
-        </div>
-      </div>
-
-      {filtered.length===0 && <div className="empty-state"><p>No records match your filters.</p></div>}
-
-      <div className="records-grid">
-        {filtered.map(r=>(
-          <div key={r._id} className={`record-card status-${r.status.toLowerCase()}`}>
-            <div className="card-top">
-              <p className="student-name">{r.studentName}</p>
-              <span className={`badge badge-${r.status.toLowerCase()}`}>{r.status}</span>
-            </div>
-            <div className="card-meta">
-              <span>💰 {formatCtc(r.ctc)}</span>
-              <span>🏷️ {r.type}</span>
-              <span>#ID {r._id.slice(-5)}</span>
-            </div>
-            <div className="card-actions">
-              <button onClick={()=>handleToggle(r._id)}>🔄 Toggle Status</button>
-              <button onClick={()=>handleDelete(r._id)}>🗑️ Remove</button>
-            </div>
+      <h1>Faculty Review Panel</h1>
+      {filtered.length === 0 && <p>No records found.</p>}
+      {filtered.map(r => (
+        <div key={r._id} className={`record-card status-${r.status.toLowerCase()}`}>
+          <div>
+            <strong>{r.studentName}</strong> @ {r.company} — {r.role} ({r.type})
           </div>
-        ))}
-      </div>
+          <div>CTC: ₹{r.ctc}</div>
+          <div>Status: {r.status}</div>
+          <button onClick={() => handleToggle(r._id)}>Toggle Status</button>
+          <button onClick={() => handleDelete(r._id)}>Delete</button>
+        </div>
+      ))}
     </div>
   );
 }
