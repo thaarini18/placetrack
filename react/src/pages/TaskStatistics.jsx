@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import '../styles/TaskStatistics.css'
 
-const API = import.meta.env.VITE_API_URL   // ✅ added
+const API = import.meta.env.VITE_API_URL
 
 export default function TaskStatistics() {
   const [records, setRecords] = useState([])
@@ -9,8 +9,12 @@ export default function TaskStatistics() {
   useEffect(() => {
     async function fetchRecords() {
       try {
-        const res = await fetch(`${API}/api/tasks`, {   // ✅ changed
-          headers: { 'x-api-key': 'placetrack2025' }
+        const res = await fetch(`${API}/api/tasks`, {
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json', // ✅ added for consistency
+            'x-api-key': 'placetrack2025'       // ✅ API key
+          }
         })
 
         const data = await res.json()
