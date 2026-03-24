@@ -12,19 +12,29 @@ export default function AddTask() {
 
   async function handler() {
     setErrorMsg('')
+
     if (!studentName.trim() || !company.trim() || !role.trim() || !ctc) {
       setErrorMsg('All fields are required.')
       return
     }
+
     try {
       const res = await fetch('http://localhost:3500/api/add', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-api-key': 'placetrack2025'
-  },
-  body: JSON.stringify({ studentName, company, role, ctc: Number(ctc), type })
-})
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'placetrack2025'
+        },
+        body: JSON.stringify({ studentName, company, role, ctc: Number(ctc), type })
+      })
+
+      const data = await res.json()   // ✅ added
+
+      if (!res.ok) {                  // ✅ added
+        setErrorMsg(data.error || 'Something went wrong')
+        return
+      }
+
       if (res.ok) {
         setSubmitted(true)
         setStudentName('')
@@ -34,6 +44,7 @@ export default function AddTask() {
         setType('Internship')
         setTimeout(() => setSubmitted(false), 3000)
       }
+
     } catch (err) {
       setErrorMsg('Could not connect to server. Is the backend running?')
     }
