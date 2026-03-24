@@ -8,9 +8,16 @@ export default function TaskStatistics() {
     async function fetchRecords() {
       try {
         const res = await fetch('http://localhost:3500/api/tasks', {
-  headers: { 'x-api-key': 'placetrack2025' }
-})
+          headers: { 'x-api-key': 'placetrack2025' }
+        })
+
         const data = await res.json()
+
+        if (!res.ok) {
+          console.error(data.error)
+          return
+        }
+
         setRecords(data)
       } catch (err) {
         console.error('Could not fetch records:', err)
@@ -24,11 +31,14 @@ export default function TaskStatistics() {
     const placements = records.filter(r => r.type === 'Placement')
     const internships = records.filter(r => r.type === 'Internship')
     const approved = records.filter(r => r.status === 'Approved')
+
     const totalPlaced = placements.filter(r => r.status === 'Approved').length
     const pctPlaced = total > 0 ? Math.round((approved.length / total) * 100) : 0
+
     const avgCtc = approved.length > 0
       ? Math.round(approved.reduce((s, r) => s + r.ctc, 0) / approved.length)
       : 0
+
     return {
       total,
       totalPlacements: placements.length,
@@ -61,30 +71,35 @@ export default function TaskStatistics() {
             <p className="stat-value">{stats.total}</p>
           </div>
         </div>
+
         <div className="stat-card">
           <div className="stat-body">
             <p className="stat-label">Total Placed</p>
             <p className="stat-value">{stats.totalPlaced}</p>
           </div>
         </div>
+
         <div className="stat-card">
           <div className="stat-body">
             <p className="stat-label">Internships</p>
             <p className="stat-value">{stats.totalInternships}</p>
           </div>
         </div>
+
         <div className="stat-card">
           <div className="stat-body">
             <p className="stat-label">% Approved</p>
             <p className="stat-value">{stats.pctPlaced}%</p>
           </div>
         </div>
+
         <div className="stat-card">
           <div className="stat-body">
             <p className="stat-label">Avg Approved CTC</p>
             <p className="stat-value">{formatCtc(stats.avgCtc)}</p>
           </div>
         </div>
+
         <div className="stat-card">
           <div className="stat-body">
             <p className="stat-label">Placements</p>
@@ -94,6 +109,7 @@ export default function TaskStatistics() {
       </div>
 
       <div className="section-title">Recent Submissions</div>
+
       <div className="recent-table">
         <table>
           <thead>
@@ -107,19 +123,25 @@ export default function TaskStatistics() {
               <th>Status</th>
             </tr>
           </thead>
+
           <tbody>
             {recentRecords.map(rec => (
-              <tr key={rec.id}>
-                <td className="id-col">{rec.id}</td>
+              <tr key={rec._id}>
+                <td className="id-col">{rec._id.slice(-5)}</td>
                 <td className="name-col">{rec.studentName}</td>
                 <td>{rec.company}</td>
                 <td>{rec.role}</td>
                 <td><span className="type-badge">{rec.type}</span></td>
                 <td>{formatCtc(rec.ctc)}</td>
-                <td><span className={`badge badge-${rec.status.toLowerCase()}`}>{rec.status}</span></td>
+                <td>
+                  <span className={`badge badge-${rec.status.toLowerCase()}`}>
+                    {rec.status}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
+
         </table>
       </div>
     </div>
