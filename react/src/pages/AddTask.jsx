@@ -1,6 +1,8 @@
 import '../styles/AddTask.css'
 import { useState } from 'react'
 
+const API = import.meta.env.VITE_API_URL;  // ✅ added
+
 export default function AddTask() {
   const [studentName, setStudentName] = useState('')
   const [company, setCompany] = useState('')
@@ -19,7 +21,7 @@ export default function AddTask() {
     }
 
     try {
-      const res = await fetch('http://localhost:3500/api/add', {
+      const res = await fetch(`${API}/api/add`, {   // ✅ changed
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -28,9 +30,9 @@ export default function AddTask() {
         body: JSON.stringify({ studentName, company, role, ctc: Number(ctc), type })
       })
 
-      const data = await res.json()   // ✅ added
+      const data = await res.json()
 
-      if (!res.ok) {                  // ✅ added
+      if (!res.ok) {
         setErrorMsg(data.error || 'Something went wrong')
         return
       }
