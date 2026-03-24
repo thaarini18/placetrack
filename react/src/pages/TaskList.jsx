@@ -1,198 +1,100 @@
-import { useState, useEffect } from 'react'
-import '../styles/TaskList.css'
+import '../styles/AddTask.css';
+import { useState } from 'react';
 
-const STORAGE_KEY = 'placetrack_records'
-const API = import.meta.env.VITE_API_URL   // ✅ added
+const API = import.meta.env.VITE_API_URL;
 
-export default function TaskList() {
-  const [records, setRecords] = useState([])
-  const [filterStatus, setFilterStatus] = useState('All')
-  const [filterType, setFilterType] = useState('All')
+export default function AddTask({ onTaskAdded }) {
+  const [studentName, setStudentName] = useState('');
+  const [company, setCompany] = useState('');
+  const [role, setRole] = useState('');
+  const [ctc, setCtc] = useState('');
+  const [type, setType] = useState('Internship');
+  const [submitted, setSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    loadRecords()
-  }, [])
-
-  async function loadRecords() {
-    const cached = localStorage.getItem(STORAGE_KEY)
-    if (cached) {
-      setRecords(JSON.parse(cached))
-      return
+  async function addTask() {
+    setErrorMsg('');
+    if (!studentName.trim() || !company.trim() || !role.trim() || !ctc) {
+      setErrorMsg('All fields are required.');
+      return;
     }
 
     try {
-      const res = await fetch(`${API}/api/tasks`, {   // ✅ changed
-        headers: { 'x-api-key': 'placetrack2025' }
-      })
+      const res = await fetch(`${API}/api/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'placetrack2025',
+        },
+        body: JSON.stringify({ studentName, company, role, ctc: Number(ctc), type }),
+      });
 
-      const data = await res.json()
-
-      if (!res.ok) {   // ✅ added
-        console.error(data.error)
-        return
-      }
-
-      setRecords(data)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-
-    } catch (err) {
-      console.error('Could not fetch records:', err)
-    }
-  }
-
-  function saveToStorage(updated) {
-    setRecords(updated)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-  }
-
-  async function handleToggle(id) {
-    try {
-      const res = await fetch(`${API}/api/update/${id}`, {   // ✅ changed
-        headers: { 'x-api-key': 'placetrack2025' }
-      })
-
-      const updatedRecord = await res.json()
-
+      const data = await res.json();
       if (!res.ok) {
-        console.error(updatedRecord.error)
-        return
+        setErrorMsg(data.error || 'Something went wrong');
+        return;
       }
 
-      const updatedList = records.map(r =>
-        r._id === updatedRecord._id ? updatedRecord : r
-      )
+      setSubmitted(true);
+      setStudentName('');
+      setCompany('');
+      setRole('');
+      setCtc('');
+      setType('Internship');
 
-      saveToStorage(updatedList)
+      // Notify parent component to reload tasks
+      if (onTaskAdded) onTaskAdded();
 
+      setTimeout(() => setSubmitted(false), 3000);
     } catch (err) {
-      console.error('Could not update record:', err)
+      console.error('Add task error:', err);
+      setErrorMsg('Could not connect to backend.');
     }
   }
-
-  async function handleDelete(id) {
-    try {
-      const res = await fetch(`${API}/api/delete/${id}`, {   // ✅ changed
-        method: 'DELETE',
-        headers: { 'x-api-key': 'placetrack2025' }
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        console.error(data.error)
-        return
-      }
-
-      const updatedList = records.filter(r => r._id !== id)
-      saveToStorage(updatedList)
-
-    } catch (err) {
-      console.error('Could not delete record:', err)
-    }
-  }
-
-  function handleRefresh() {
-    localStorage.removeItem(STORAGE_KEY)
-    loadRecords()
-  }
-
-  function formatCtc(ctc) {
-    return ctc >= 100000
-      ? '₹' + (ctc / 100000).toFixed(1) + ' LPA'
-      : '₹' + ctc.toLocaleString('en-IN') + '/mo'
-  }
-
-  const filtered = records.filter(r => {
-    const statusOk = filterStatus === 'All' || r.status === filterStatus
-    const typeOk = filterType === 'All' || r.type === filterType
-    return statusOk && typeOk
-  })
 
   return (
-    <div className="page-list">
+    <div className="page-add">
       <div className="page-header">
-        <h1>👩‍🏫 Faculty Review Panel</h1>
-        <p className="subtitle">Review, approve, or reject student submissions.</p>
+        <h1>Student Portal</h1>
+        <p className="subtitle">Submit your internship or placement details for approval.</p>
       </div>
 
-      <div className="storage-bar">
-        <span className="storage-info">
-          💾 {records.length} records saved in Local Storage
-        </span>
-        <button className="btn-refresh" onClick={handleRefresh}>
-          🔄 Refresh from Server
-        </button>
-      </div>
+      {submitted && <div className="alert alert-success">Submission successful!</div>}
+      {errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
-      <div className="filter-bar">
-        <div className="filter-group">
-          <span className="filter-label">Status:</span>
-          {['All', 'Pending', 'Approved', 'Rejected'].map(s => (
-            <button key={s}
-              className={`filter-btn ${filterStatus === s ? 'active' : ''}`}
-              onClick={() => setFilterStatus(s)}>
-              {s}
-            </button>
-          ))}
-        </div>
-
-        <div className="filter-group">
-          <span className="filter-label">Type:</span>
-          {['All', 'Internship', 'Placement'].map(t => (
-            <button key={t}
-              className={`filter-btn ${filterType === t ? 'active' : ''}`}
-              onClick={() => setFilterType(t)}>
-              {t}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="empty-state">
-          <span>🔍</span>
-          <p>No records match your filters.</p>
-        </div>
-      )}
-
-      <div className="records-grid">
-        {filtered.map(rec => (
-          <div key={rec._id} className={`record-card status-${rec.status.toLowerCase()}`}>
-            <div className="card-top">
-              <div className="student-info">
-                <span className="student-avatar">{rec.studentName[0]}</span>
-                <div>
-                  <p className="student-name">{rec.studentName}</p>
-                  <p className="student-role">{rec.role} @ {rec.company}</p>
-                </div>
-              </div>
-              <span className={`badge badge-${rec.status.toLowerCase()}`}>
-                {rec.status}
-              </span>
-            </div>
-
-            <div className="card-meta">
-              <span className="meta-item">
-                <span className="meta-icon">💰</span>{formatCtc(rec.ctc)}
-              </span>
-              <span className="meta-item">
-                <span className="meta-icon">🏷️</span>{rec.type}
-              </span>
-              <span className="meta-item">
-                <span className="meta-icon">#</span>ID {rec._id.slice(-5)}
-              </span>
-            </div>
-
-            <div className="card-actions">
-              <button className="btn-cycle" onClick={() => handleToggle(rec._id)}>
-                🔄 Toggle Status
-              </button>
-              <button className="btn-delete" onClick={() => handleDelete(rec._id)}>
-                🗑️ Remove
-              </button>
+      <div className="placement-form">
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Student Name</label>
+            <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="e.g. Aisha Patel"/>
+          </div>
+          <div className="form-group">
+            <label>Company Name</label>
+            <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google"/>
+          </div>
+          <div className="form-group">
+            <label>Role / Designation</label>
+            <input type="text" value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. SWE Intern"/>
+          </div>
+          <div className="form-group">
+            <label>CTC / Stipend (₹)</label>
+            <input type="number" value={ctc} onChange={e => setCtc(e.target.value)} placeholder="e.g. 80000"/>
+          </div>
+          <div className="form-group full-width">
+            <label>Opportunity Type</label>
+            <div className="radio-group">
+              <label className={`radio-option ${type==='Internship'?'selected':''}`}>
+                <input type="radio" value="Internship" checked={type==='Internship'} onChange={()=>setType('Internship')}/> 🏢 Internship
+              </label>
+              <label className={`radio-option ${type==='Placement'?'selected':''}`}>
+                <input type="radio" value="Placement" checked={type==='Placement'} onChange={()=>setType('Placement')}/> 💼 Full-Time Placement
+              </label>
             </div>
           </div>
-        ))}
+        </div>
+
+        <button className="btn-submit" onClick={addTask}>Submit Application →</button>
       </div>
     </div>
-  )
+  );
 }
