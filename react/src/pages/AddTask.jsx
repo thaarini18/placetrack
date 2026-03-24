@@ -28,13 +28,11 @@ export default function AddTask({ onTaskAdded }) {
         },
         body: JSON.stringify({ studentName, company, role, ctc: Number(ctc), type }),
       });
-
       const data = await res.json();
       if (!res.ok) {
         setErrorMsg(data.error || 'Something went wrong');
         return;
       }
-
       setSubmitted(true);
       setStudentName('');
       setCompany('');
@@ -42,12 +40,11 @@ export default function AddTask({ onTaskAdded }) {
       setCtc('');
       setType('Internship');
 
-      // Notify parent component to reload tasks
-      if (onTaskAdded) onTaskAdded();
+      if (onTaskAdded) onTaskAdded(); // notify TaskList to refresh
 
       setTimeout(() => setSubmitted(false), 3000);
     } catch (err) {
-      console.error('Add task error:', err);
+      console.error(err);
       setErrorMsg('Could not connect to backend.');
     }
   }
@@ -66,33 +63,32 @@ export default function AddTask({ onTaskAdded }) {
         <div className="form-grid">
           <div className="form-group">
             <label>Student Name</label>
-            <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="e.g. Aisha Patel"/>
+            <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="e.g. Aisha Patel" />
           </div>
           <div className="form-group">
             <label>Company Name</label>
-            <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google"/>
+            <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google" />
           </div>
           <div className="form-group">
             <label>Role / Designation</label>
-            <input type="text" value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. SWE Intern"/>
+            <input type="text" value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. SWE Intern" />
           </div>
           <div className="form-group">
             <label>CTC / Stipend (₹)</label>
-            <input type="number" value={ctc} onChange={e => setCtc(e.target.value)} placeholder="e.g. 80000"/>
+            <input type="number" value={ctc} onChange={e => setCtc(e.target.value)} placeholder="e.g. 80000" />
           </div>
           <div className="form-group full-width">
             <label>Opportunity Type</label>
             <div className="radio-group">
               <label className={`radio-option ${type==='Internship'?'selected':''}`}>
-                <input type="radio" value="Internship" checked={type==='Internship'} onChange={()=>setType('Internship')}/> 🏢 Internship
+                <input type="radio" value="Internship" checked={type==='Internship'} onChange={()=>setType('Internship')} /> 🏢 Internship
               </label>
               <label className={`radio-option ${type==='Placement'?'selected':''}`}>
-                <input type="radio" value="Placement" checked={type==='Placement'} onChange={()=>setType('Placement')}/> 💼 Full-Time Placement
+                <input type="radio" value="Placement" checked={type==='Placement'} onChange={()=>setType('Placement')} /> 💼 Full-Time Placement
               </label>
             </div>
           </div>
         </div>
-
         <button className="btn-submit" onClick={addTask}>Submit Application →</button>
       </div>
     </div>
