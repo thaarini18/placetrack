@@ -1,99 +1,114 @@
-import '../styles/AddTask.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import '../styles/TaskList.css';
 
 const API = import.meta.env.VITE_API_URL;
 
-export default function AddTask({ onTaskAdded }) {
-  const [studentName, setStudentName] = useState('');
-  const [company, setCompany] = useState('');
-  const [role, setRole] = useState('');
-  const [ctc, setCtc] = useState('');
-  const [type, setType] = useState('Internship');
-  const [submitted, setSubmitted] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+export default function TaskList() {
+  const [records, setRecords] = useState([]);
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [filterType, setFilterType] = useState('All');
 
-  async function addTask() {
-    setErrorMsg('');
-    if (!studentName.trim() || !company.trim() || !role.trim() || !ctc) {
-      setErrorMsg('All fields are required.');
-      return;
-    }
+  useEffect(() => {
+    loadRecords();
+  }, []);
 
+  async function loadRecords() {
     try {
-      const res = await fetch(`${API}/api/add`, {
-        method: 'POST',
-        headers: {
+      const res = await fetch(`${API}/api/tasks`, {
+        method: 'GET',
+        headers: { 
           'Content-Type': 'application/json',
-          'x-api-key': 'placetrack2025',
-        },
-        body: JSON.stringify({ studentName, company, role, ctc: Number(ctc), type }),
+          'x-api-key': 'placetrack2025' 
+        }
       });
-
       const data = await res.json();
-      if (!res.ok) {
-        setErrorMsg(data.error || 'Something went wrong');
-        return;
-      }
-
-      setSubmitted(true);
-      setStudentName('');
-      setCompany('');
-      setRole('');
-      setCtc('');
-      setType('Internship');
-
-      // Notify parent component to reload tasks
-      if (onTaskAdded) onTaskAdded();
-
-      setTimeout(() => setSubmitted(false), 3000);
+      if (res.ok) setRecords(data);
     } catch (err) {
-      console.error('Add task error:', err);
-      setErrorMsg('Could not connect to backend.');
+      console.error('Could not fetch records:', err);
     }
   }
 
+  async function handleToggle(id) {
+    try {
+      const res = await fetch(`${API}/api/update/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'placetrack2025'
+        }
+      });
+      if (res.ok) loadRecords();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleDelete(id) {
+    try {
+      const res = await fetch(`${API}/api/delete/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'placetrack2025'
+        }
+      });
+      if (res.ok) loadRecords();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const filtered = records.filter(r => 
+    (filterStatus==='All'||r.status===filterStatus) &&
+    (filterType==='All'||r.type===filterType)
+  );
+
+  function formatCtc(ctc) {
+    return ctc>=100000 ? '₹'+(ctc/100000).toFixed(1)+' LPA' : '₹'+ctc.toLocaleString('en-IN')+'/mo';
+  }
+
   return (
-    <div className="page-add">
+    <div className="page-list">
       <div className="page-header">
-        <h1>Student Portal</h1>
-        <p className="subtitle">Submit your internship or placement details for approval.</p>
+        <h1>👩‍🏫 Faculty Review Panel</h1>
+        <p className="subtitle">Review, approve, or reject student submissions.</p>
       </div>
 
-      {submitted && <div className="alert alert-success">Submission successful!</div>}
-      {errorMsg && <div className="alert alert-error">{errorMsg}</div>}
+      <div className="filter-bar">
+        <div className="filter-group">
+          <span>Status:</span>
+          {['All','Pending','Approved','Rejected'].map(s=>(
+            <button key={s} className={filterStatus===s?'active':''} onClick={()=>setFilterStatus(s)}>{s}</button>
+          ))}
+        </div>
+        <div className="filter-group">
+          <span>Type:</span>
+          {['All','Internship','Placement'].map(t=>(
+            <button key={t} className={filterType===t?'active':''} onClick={()=>setFilterType(t)}>{t}</button>
+          ))}
+        </div>
+      </div>
 
-      <div className="placement-form">
-        <div className="form-grid">
-          <div className="form-group">
-            <label>Student Name</label>
-            <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="e.g. Aisha Patel"/>
-          </div>
-          <div className="form-group">
-            <label>Company Name</label>
-            <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google"/>
-          </div>
-          <div className="form-group">
-            <label>Role / Designation</label>
-            <input type="text" value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. SWE Intern"/>
-          </div>
-          <div className="form-group">
-            <label>CTC / Stipend (₹)</label>
-            <input type="number" value={ctc} onChange={e => setCtc(e.target.value)} placeholder="e.g. 80000"/>
-          </div>
-          <div className="form-group full-width">
-            <label>Opportunity Type</label>
-            <div className="radio-group">
-              <label className={`radio-option ${type==='Internship'?'selected':''}`}>
-                <input type="radio" value="Internship" checked={type==='Internship'} onChange={()=>setType('Internship')}/> 🏢 Internship
-              </label>
-              <label className={`radio-option ${type==='Placement'?'selected':''}`}>
-                <input type="radio" value="Placement" checked={type==='Placement'} onChange={()=>setType('Placement')}/> 💼 Full-Time Placement
-              </label>
+      {filtered.length===0 && <div className="empty-state"><p>No records match your filters.</p></div>}
+
+      <div className="records-grid">
+        {filtered.map(r=>(
+          <div key={r._id} className={`record-card status-${r.status.toLowerCase()}`}>
+            <div className="card-top">
+              <p className="student-name">{r.studentName}</p>
+              <span className={`badge badge-${r.status.toLowerCase()}`}>{r.status}</span>
+            </div>
+            <div className="card-meta">
+              <span>💰 {formatCtc(r.ctc)}</span>
+              <span>🏷️ {r.type}</span>
+              <span>#ID {r._id.slice(-5)}</span>
+            </div>
+            <div className="card-actions">
+              <button onClick={()=>handleToggle(r._id)}>🔄 Toggle Status</button>
+              <button onClick={()=>handleDelete(r._id)}>🗑️ Remove</button>
             </div>
           </div>
-        </div>
-
-        <button className="btn-submit" onClick={addTask}>Submit Application →</button>
+        ))}
       </div>
     </div>
   );
