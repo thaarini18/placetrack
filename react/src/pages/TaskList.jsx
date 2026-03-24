@@ -13,20 +13,21 @@ export default function TaskList() {
   }, [])
 
   async function loadRecords() {
-    // Check localStorage first
     const cached = localStorage.getItem(STORAGE_KEY)
     if (cached) {
       setRecords(JSON.parse(cached))
       return
     }
-    // If nothing in localStorage fetch from backend
+
     try {
       const res = await fetch('http://localhost:3500/api/tasks', {
-  headers: { 'x-api-key': 'placetrack2025' }
-})
+        headers: { 'x-api-key': 'placetrack2025' }
+      })
+
       const data = await res.json()
       setRecords(data)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+
     } catch (err) {
       console.error('Could not fetch records:', err)
     }
@@ -40,11 +41,17 @@ export default function TaskList() {
   async function handleToggle(id) {
     try {
       const res = await fetch(`http://localhost:3500/api/update/${id}`, {
-  headers: { 'x-api-key': 'placetrack2025' }
-})
+        headers: { 'x-api-key': 'placetrack2025' }
+      })
+
       const updatedRecord = await res.json()
-      const updatedList = records.map(r => r.id === updatedRecord.id ? updatedRecord : r)
+
+      const updatedList = records.map(r =>
+        r._id === updatedRecord._id ? updatedRecord : r
+      )
+
       saveToStorage(updatedList)
+
     } catch (err) {
       console.error('Could not update record:', err)
     }
@@ -53,11 +60,13 @@ export default function TaskList() {
   async function handleDelete(id) {
     try {
       await fetch(`http://localhost:3500/api/delete/${id}`, {
-  method: 'DELETE',
-  headers: { 'x-api-key': 'placetrack2025' }
-})
-      const updatedList = records.filter(r => r.id !== id)
+        method: 'DELETE',
+        headers: { 'x-api-key': 'placetrack2025' }
+      })
+
+      const updatedList = records.filter(r => r._id !== id)
       saveToStorage(updatedList)
+
     } catch (err) {
       console.error('Could not delete record:', err)
     }
@@ -122,7 +131,7 @@ export default function TaskList() {
 
       <div className="records-grid">
         {filtered.map(rec => (
-          <div key={rec.id} className={`record-card status-${rec.status.toLowerCase()}`}>
+          <div key={rec._id} className={`record-card status-${rec.status.toLowerCase()}`}>
             <div className="card-top">
               <div className="student-info">
                 <span className="student-avatar">{rec.studentName[0]}</span>
@@ -133,14 +142,26 @@ export default function TaskList() {
               </div>
               <span className={`badge badge-${rec.status.toLowerCase()}`}>{rec.status}</span>
             </div>
+
             <div className="card-meta">
-              <span className="meta-item"><span className="meta-icon">💰</span>{formatCtc(rec.ctc)}</span>
-              <span className="meta-item"><span className="meta-icon">🏷️</span>{rec.type}</span>
-              <span className="meta-item"><span className="meta-icon">#</span>ID {rec.id}</span>
+              <span className="meta-item">
+                <span className="meta-icon">💰</span>{formatCtc(rec.ctc)}
+              </span>
+              <span className="meta-item">
+                <span className="meta-icon">🏷️</span>{rec.type}
+              </span>
+              <span className="meta-item">
+                <span className="meta-icon">#</span>ID {rec._id.slice(-5)}
+              </span>
             </div>
+
             <div className="card-actions">
-              <button className="btn-cycle" onClick={() => handleToggle(rec.id)}>🔄 Toggle Status</button>
-              <button className="btn-delete" onClick={() => handleDelete(rec.id)}>🗑️ Remove</button>
+              <button className="btn-cycle" onClick={() => handleToggle(rec._id)}>
+                🔄 Toggle Status
+              </button>
+              <button className="btn-delete" onClick={() => handleDelete(rec._id)}>
+                🗑️ Remove
+              </button>
             </div>
           </div>
         ))}
