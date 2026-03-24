@@ -1,11 +1,12 @@
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
-import AddTask from './pages/AddTask.jsx'
-import TaskList from './pages/TaskList.jsx'
-import TaskStatistics from './pages/TaskStatistics.jsx'
-import './styles/global.css'
+import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { useState } from 'react';
+import AddTask from './pages/AddTask.jsx';
+import TaskList from './pages/TaskList.jsx';
+import TaskStatistics from './pages/TaskStatistics.jsx';
+import './styles/global.css';
 
 function NavBar() {
-  const location = useLocation()
+  const location = useLocation();
   return (
     <header className="site-header">
       <div className="header-inner">
@@ -14,31 +15,29 @@ function NavBar() {
           <span className="brand-text">PlaceTrack</span>
         </div>
         <nav className="main-nav">
-          <Link to="/student" className={location.pathname === '/student' ? 'active' : ''}>
-            Student
-          </Link>
-          <Link to="/faculty" className={location.pathname === '/faculty' ? 'active' : ''}>
-            Faculty
-          </Link>
-          <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>
-            Admin
-          </Link>
+          <Link to="/student" className={location.pathname === '/student' ? 'active' : ''}>Student</Link>
+          <Link to="/faculty" className={location.pathname === '/faculty' ? 'active' : ''}>Faculty</Link>
+          <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>Admin</Link>
         </nav>
       </div>
     </header>
-  )
+  );
 }
 
 function App() {
+  const [reloadFlag, setReloadFlag] = useState(false);
+
+  const handleTaskAdded = () => setReloadFlag(prev => !prev);
+
   return (
     <BrowserRouter>
       <div className="app-shell">
         <NavBar />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<AddTask />} />
-            <Route path="/student" element={<AddTask />} />
-            <Route path="/faculty" element={<TaskList />} />
+            <Route path="/" element={<Navigate to="/student" />} />
+            <Route path="/student" element={<AddTask onTaskAdded={handleTaskAdded} />} />
+            <Route path="/faculty" element={<TaskList reloadFlag={reloadFlag} />} />
             <Route path="/admin" element={<TaskStatistics />} />
           </Routes>
         </main>
@@ -47,7 +46,7 @@ function App() {
         </footer>
       </div>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
