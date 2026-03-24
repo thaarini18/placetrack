@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3500;
 // Allow your Vercel frontend + local testing
 app.use(cors({
   origin: [
-    "https://your-frontend.vercel.app", // <-- Replace with your actual Vercel URL
+    "https://placetrack-xptc.onrender.com",
     "http://localhost:5173"              // For local frontend testing
   ],
   methods: ["GET", "POST", "DELETE"],
